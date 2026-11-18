@@ -43,10 +43,12 @@ The reference routes are continuous chains (the head of one arc is the tail of t
 def preprocessing(c):
     pl = c["plog"]
     return f"""<ol>
-<li><b>Coordinates.</b> Longitude and latitude are angles, so distances in degrees are meaningless (one degree of longitude
-is about 67 km here, against 111 km for a degree of latitude). Each trip is projected onto a local tangent plane
-(equirectangular, centred on the trip mean): x = R·Δλ·cos φ₀, y = R·Δφ. For trips a few km across, the error against
-the true geodesic distance is far below the GPS noise. All later geometry is in metres.</li>
+<li><b>Coordinates.</b> Longitude and latitude are angles, so distances in degrees are not physical distances: a degree of
+latitude is about 111 km everywhere, but a degree of longitude is 111 km · cos(latitude), which varies from trip to trip
+because the trips are spread across the globe (§2.3). Each trip is therefore projected onto its own local tangent plane
+(equirectangular, centred on that trip's mean position): x = R·Δλ·cos φ₀, y = R·Δφ. The largest trip extent is
+{max(c['inv'].extent_ew_km.max(), c['inv'].extent_ns_km.max()):.0f} km. We did not measure the projection error against geodesic distance for our trips. Our
+choice rests on the standard result that this approximation is accurate at city scale. All later geometry is in metres.</li>
 <li><b>Cleaning.</b> We drop fixes with missing or out-of-range coordinates and duplicate timestamps, sort by time, and
 remove isolated speed spikes (fixes reached from <i>and</i> left at more than 70 m/s). Across the 90 trips this removed
 {int(pl.invalid.sum())} invalid fixes, {int(pl.duplicate_t.sum())} duplicate timestamps and {int(pl.speed_spikes.sum())} spikes.
@@ -73,15 +75,15 @@ def patterns(c):
     inv = c["inv"]
     return f"""<ul>
 <li>Sampling is essentially 1 Hz: a median of {p(inv.frac_dt_1s.median(), 1)} of steps are exactly 1 s. However, {int((inv.max_gap_s > 30).sum())} trips have
-gaps longer than 30 s, and the longest is {inv.max_gap_s.max() / 3600:.1f} h (the vehicle parked and the log resumed). The decoder must therefore
-handle gaps explicitly.</li>
+gaps longer than 30 s, and the longest is {inv.max_gap_s.max() / 3600:.1f} h. The decoder must therefore handle gaps explicitly.</li>
 <li>Trips differ a lot in length, from {inv.n_gps.min()} to {inv.n_gps.max():,} fixes (median {int(inv.n_gps.median()):,}). Cross-validation is therefore grouped
 by trip, and accuracy is pooled over fixes.</li>
-<li>All trips lie in one region (mean position about {inv.lon_mean.mean():.2f}° E, {inv.lat_mean.mean():.2f}° N, in the English East Midlands), with
-extents up to {max(inv.extent_ew_km.max(), inv.extent_ns_km.max()):.0f} km. A local projection per trip is accurate enough.</li>
-<li>The networks are dense, with a mean arc length of {inv.mean_arc_len_m.median():.0f} m (median over trips). Parallel and opposite-direction
-arcs sit within GPS-noise distance of each other, so the nearest arc is often wrong: it is correct for only
-{p(c['nearest_top1'])} of student-test fixes. Heading and temporal context are needed to separate such arcs.</li>
+<li>The trips do <b>not</b> share one region. Per-trip mean longitudes range from {inv.lon_mean.min():.1f}° to {inv.lon_mean.max():.1f}°
+and mean latitudes from {inv.lat_mean.min():.1f}° to {inv.lat_mean.max():.1f}°, so each trip needs its own projection (we use one per trip, never one for the whole dataset).
+Within a trip the extent is at most {max(inv.extent_ew_km.max(), inv.extent_ns_km.max()):.0f} km (median {inv[['extent_ew_km', 'extent_ns_km']].max(axis=1).median():.1f} km).</li>
+<li>The networks are dense, with a mean arc length of {inv.mean_arc_len_m.median():.0f} m (median over trips), and
+{p(inv.reverse_arc_frac.mean(), 0)} of arcs have an opposite-direction twin on the same geometry. Distance alone cannot separate such twins, and the
+nearest arc is the reference arc for only {p(c['nearest_top1'])} of student-test fixes. This motivated the heading and temporal-context features.</li>
 <li>The networks are not fully connected: a median of {int(inv.n_weak_components.median())} weakly connected components per trip, and
 {int(inv.isolated_nodes.sum())} isolated nodes in total. The HMM must therefore tolerate unreachable transitions.</li>
 </ul>"""
@@ -195,6 +197,14 @@ not drive it. The other selection criteria also point the same way:</p>
 MLP are competitive but slower and were trained on subsamples. The tree ensembles are close, but slower or larger.</p>"""
 
 
+def intro(c):
+    return """<p>GPS fixes are noisy: they drift off the road, onto parallel streets and across junctions. The task is to assign
+every fix of a trip to the road segment (arc) the vehicle was actually on, so that the predicted segments form a realistic, connected route.
+We build this as a pipeline: candidate generation → a learned candidate classifier (5+ models compared, the best one Bayesian-tuned)
+→ HMM/Viterbi decoding over the road network. The pipeline is served by a FastAPI backend (Laptop 1) and an evaluator UI (Laptop 2).
+Sections 2–7 follow the structure required by the deliverables document.</p>"""
+
+
 def bayes(c):
     bo, tvu = c["bo"], c["tvu"].set_index("variant")
     t = c["trials"]
@@ -212,7 +222,14 @@ The ranges centre on LightGBM defaults and widen in both directions: towards sim
 <li><b>Did tuning help?</b> {'Yes' if better else 'Only marginally / not on the student test'}. Student-test Top-1 went from {p(u.st_top1_acc)} to {p(tu.st_top1_acc)},
 CV macro F1 from {u.cv_macro_f1:.4f} to {tu.cv_macro_f1:.4f}, and log loss from {u.st_log_loss:.4f} to {tu.st_log_loss:.4f}. Inference time changed from {u.inference_time_s:.2f} s to
 {tu.inference_time_s:.2f} s for the whole student-test partition. Both variants used the same partitions and metrics. The best trial improved on the worst by
-{p(t.value.max() - t.value.min())} CV Top-1.</li></ol>"""
+{p(t.value.max() - t.value.min())} CV Top-1.</li>
+<li><b>Why the untuned CV numbers differ from §3:</b> §3 uses 5-fold GroupKFold (untuned LightGBM CV macro F1 {c['cmp'].set_index('model').loc[c['best'], 'cv_macro_f1_mean']:.4f}), while the
+Bayesian search and this table use 3-fold GroupKFold ({u.cv_macro_f1:.4f}). We used fewer folds to keep 30 trials affordable. Each fold then trains on fewer trips, and
+different trips land in each validation fold. Within this table, tuned and untuned use the identical 3 folds.</li>
+<li><b>Cost trade-off:</b> the tuned model scores the {c['n_cands_st']:,} student-test candidate rows in {tu.inference_time_s:.2f} s against {u.inference_time_s:.2f} s untuned,
+about {tu.inference_time_s / u.inference_time_s:.0f}× slower (650 trees with up to 214 leaves, against 400 × 63). The gain is {100 * (tu.st_top1_acc - u.st_top1_acc):.1f} points of Top-1 and a lower log loss.
+We kept the tuned model because the API processes one trip at a time and classifier time per trip stays around a second, which the evaluator would not notice.
+If inference cost mattered (for example a fleet of vehicles in real time), the untuned model would be the better choice.</li></ol>"""
 
 
 def hmm(c):
@@ -240,18 +257,24 @@ def hmm_discussion(c):
     improved = int((h.hmm_top1 > h.clf_top1).sum())
     hh = c["hmm"].set_index("method")
     t = (f"<p><b>Did HMM decoding improve the route?</b> Yes. Pooled Top-1 rose from {p(hh.iloc[0].top1_acc)} to {p(hh.iloc[1].top1_acc)}, and it improved on "
-         f"{improved} of {len(h)} trips. The largest gain is in continuity: isolated wrong snaps to a crossing street or the "
-         f"opposite carriageway cannot be reached from their neighbours at a plausible distance, so Viterbi replaces them. Route F1 and the "
-         f"order-aware LCS ratio rise as well.</p>")
+         f"{improved} of {len(h)} trips. The largest gain is in continuity: breaks per trip fell from {hh.iloc[0].breaks_per_trip:.1f} to "
+         f"{hh.iloc[1].breaks_per_trip:.1f}, and route F1 rose from {hh.iloc[0].route_f1:.4f} to {hh.iloc[1].route_f1:.4f}. "
+         f"This is what the transition model is designed to do: it penalises consecutive arcs that are not reachable from each other at a plausible distance.</p>")
     if len(worse):
-        t += (f"<p><b>Where it did not help:</b> on trip(s) {', '.join(worse.trip_id)} accuracy dropped slightly. Inspecting the maps shows "
-              f"that when the classifier is confidently wrong for a long run of fixes (for example a parallel service road), "
-              f"the HMM keeps the whole run consistent and wrong. Breaks that remain come mostly from gap cuts and from stretches where "
-              f"the network has no connecting arc.</p>")
+        t += (f"<p><b>Where it did not help:</b> on trip(s) {', '.join(worse.trip_id)} accuracy dropped slightly. The error breakdown below shows which kinds of error remain.</p>")
     else:
-        t += ("<p><b>Where it did not help:</b> the remaining errors are mostly long runs on a parallel road, where the classifier and the HMM agree on "
-              "the wrong but connected alternative, and fixes right at junctions where the label itself is ambiguous.</p>")
+        t += f"<p><b>Where it did not help:</b> {err_text(c)}</p>"
     return t
+
+
+def err_text(c):
+    e = c["err"]
+    tot = e["n"].sum()
+    parts = ", ".join(f"{r.category} {r.n} ({r.n / tot:.0%})" for r in e.itertuples())
+    return (f"{tot} reliable student-test fixes are still wrong after decoding. We split them by their relation to the reference arc: {parts}. "
+            "The 'reference not in candidates' errors cannot be fixed by any classifier or decoder, only by candidate generation. "
+            "'Opposite direction' errors pick the twin arc on the same geometry, which the heading features target. "
+            "'Adjacent arc' errors are off by one arc at a junction, where the label itself depends on our alignment.")
 
 
 def folium_text(c):
@@ -284,11 +307,11 @@ accuracy, classifier-only accuracy, continuity, breaks, route F1 and processing 
 def conclusions(c):
     hh = c["hmm"].set_index("method")
     return f"""<ul>
-<li>Framing map-matching as candidate ranking lets standard classifiers be compared fairly. Temporal-context and heading features are what
-lift the classifiers above the nearest-arc rule ({p(c['nearest_top1'])} → {p(hh.iloc[0].top1_acc)} Top-1).</li>
+<li>Framing map-matching as candidate ranking lets standard classifiers be compared fairly. The learned classifier lifts Top-1 well above
+the nearest-arc rule ({p(c['nearest_top1'])} → {p(hh.iloc[0].top1_acc)}). Fig 3.6 shows which features the final model relies on most.</li>
 <li>{c['best']} gave the best cross-validated accuracy and well-calibrated probabilities, and Bayesian optimisation tuned it further.</li>
 <li>HMM/Viterbi decoding adds network connectivity, raising Top-1 to {p(hh.iloc[1].top1_acc)} and producing far more continuous routes.</li>
-<li><b>Limitations:</b> the per-fix labels come from our own alignment of the reference route, which itself may be imperfect. About 11% of
+<li><b>Limitations:</b> the per-fix labels come from our own alignment of the reference route, which itself may be imperfect. {p(c['unreliable_tr'], 1)} of
 training fixes could not be labelled reliably. The 50 m reliability threshold is a judgement call. Accuracy over all labelled fixes is reported alongside.</li>
 <li><b>Future work:</b> learn the transition model, try sequence models such as a CRF, and use speed-dependent β.</li></ul>"""
 
