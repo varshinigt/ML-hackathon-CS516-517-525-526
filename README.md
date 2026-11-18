@@ -107,6 +107,15 @@ The reference routes never leave Laptop 1. The API reads them only after predict
 - **Models.** 10 models from 7 families are compared with GroupKFold cross-validation by trip. The model with the best CV Top-1 is tuned with Optuna's TPE sampler.
 - **HMM.** The emissions are the classifier probabilities. The transitions follow Newson and Krumm: `-|network distance - straight-line distance| / beta`. Long time gaps cut the chain, and unreachable transitions get a finite penalty instead of making decoding fail.
 
+## Results (10 student-test trips)
+
+| Method | Top-1 accuracy | Route continuity | Breaks per trip | Route F1 |
+|---|---|---|---|---|
+| Classifier only (arg-max) | 89.74% | 98.59% | 29.1 | 94.19% |
+| Classifier + HMM/Viterbi | 93.43% | 99.93% | 1.2 | 97.37% |
+
+Source: `results/hmm_comparison.csv`.
+
 ## AI-assistance disclosure
 
 Parts of this code and the report draft were written with an AI assistant. Every number, plot and map comes from running the code in this repository on the provided data. The team has reviewed the work and is responsible for explaining it.
