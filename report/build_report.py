@@ -24,6 +24,15 @@ import pandas as pd  # noqa: E402
 import narrative as N  # noqa: E402
 
 RES, FIG, IMG = ROOT / "results", ROOT / "results" / "figures", ROOT / "report" / "img"
+# Screenshots taken by the team on the real machines (see report/screenshots/README.md).
+SHOTS = ROOT / "report" / "screenshots"
+NO_BASEMAP = " The basemap is missing because map tiles could not be downloaded on the machine that rendered this screenshot."
+
+
+def map_shot(name):
+    """Prefer a team re-render (with basemap) in report/screenshots/, else the offline render in report/img/."""
+    team = SHOTS / f"{name}.png"
+    return (team, "") if team.exists() else (IMG / f"{name}.png", NO_BASEMAP)
 
 
 def pct(v, d=2):
@@ -78,6 +87,51 @@ def mlp_curve():
     return len(mlp.loss_curve_)
 
 
+def importance_fig(name):
+    import joblib
+    from pathsnap.features import FEATURES
+    m = joblib.load(sorted((ROOT / "models").glob(f"final_{name}_*.joblib"))[0])
+    imp = pd.Series(m.booster_.feature_importance("gain"), index=FEATURES).sort_values()
+    imp = imp / imp.sum()
+    fig, ax = plt.subplots(figsize=(7, 5))
+    ax.barh(imp.index, imp.values)
+    ax.set(title=f"Final {name}: share of total split gain", xlabel="share of gain")
+    fig.tight_layout(); fig.savefig(FIG / "feature_importance.png", dpi=130); plt.close(fig)
+    imp.sort_values(ascending=False).to_csv(RES / "feature_importance.csv", header=["gain_share"])
+
+
+def error_breakdown():
+    """Run the deployed pipeline on the student-test trips and categorise the remaining HMM errors."""
+    from pathsnap.io import discover_trips, load_splits, load_trip
+    from pathsnap.metrics import RELIABLE_REF_M
+    from pathsnap.pipeline import PathSnapPredictor
+    from pathsnap.preprocess import align_route
+    pred = PathSnapPredictor()
+    trips = discover_trips()
+    cnt = {"reference arc not in candidate set": 0, "opposite direction of reference arc": 0,
+           "adjacent arc (shares a node with reference)": 0, "other arc": 0}
+    for tid in load_splits()["student_test"]:
+        trip = load_trip(tid, trips[tid])
+        res = pred.predict(trip)
+        net, pts, cands = res["net"], res["points"], res["cands"]
+        ref, d = align_route(pts, net, trip.route)
+        cand_sets = cands.groupby("pt")["arc"].apply(set)
+        for i, (a, r) in enumerate(zip(res["hmm_arcs"], ref)):
+            if d[i] > RELIABLE_REF_M or a == r:
+                continue
+            if r not in cand_sets.get(i, set()):
+                cnt["reference arc not in candidate set"] += 1
+            elif net.u[a] == net.v[r] and net.v[a] == net.u[r]:
+                cnt["opposite direction of reference arc"] += 1
+            elif {net.u[a], net.v[a]} & {net.u[r], net.v[r]}:
+                cnt["adjacent arc (shares a node with reference)"] += 1
+            else:
+                cnt["other arc"] += 1
+    df = pd.DataFrame({"category": list(cnt), "n": list(cnt.values())})
+    df.to_csv(RES / "hmm_error_breakdown.csv", index=False)
+    return df
+
+
 def main():
     inv = pd.read_csv(RES / "eda" / "inventory.csv", dtype={"trip_id": str})
     plog = pd.read_csv(RES / "preprocessing_log.csv", dtype={"trip_id": str})
@@ -93,6 +147,8 @@ def main():
     hgrid = pd.read_csv(RES / "hmm_grid.csv")
     confusion_fig(cmp)
     n_epochs = mlp_curve()
+    importance_fig(best_name)
+    err = error_breakdown()
 
     # nearest-arc rule as a reference point (not one of the compared models)
     pts_st = pd.read_pickle(ROOT / "data" / "processed" / "points_student_test.pkl").reset_index().rename(columns={"index": "pt"})
@@ -109,12 +165,13 @@ def main():
     ctx = dict(inv=inv, plog=plog, cmp=cmp, folds=folds, best=best_name, bo=bo, tvu=tvu, trials=trials,
                hmm=hmm, hper=hper, hcfg=hcfg, hgrid=hgrid, nearest_top1=nearest_top1, n_epochs=n_epochs,
                unreliable_tr=unreliable_tr, unreliable_st=unreliable_st, pos_rate=pos_rate,
-               n_cands_tr=len(c_tr), n_cands_st=len(c_st))
+               n_cands_tr=len(c_tr), n_cands_st=len(c_st), err=err)
 
     S = []
     S.append(f"""<h1>PathSnap: Map-Matching and Route Reconstruction</h1>
 <p class="sub">UE24CS352A Machine Learning Hackathon, Technical Report. Team CS516 · CS517 · CS525 · CS526</p>
-<div class="box"><b>Summary.</b> {N.summary(ctx)}</div>""")
+<div class="box"><b>Summary.</b> {N.summary(ctx)}</div>
+<h2>1. Problem Overview</h2>{N.intro(ctx)}""")
 
     # ------------------------------------------------------------------ 2 EDA
     pc = inv.groupby("partition").agg(trips=("trip_id", "count"), gps_points=("n_gps", "sum"),
@@ -136,7 +193,7 @@ def main():
 {table(anomalies.head(15), ['trip_id', 'partition', 'n_gps', 'max_gap_s', 'n_gaps_gt_10s', 'max_jump_m', 'route_discontinuities'], {'max_jump_m': lambda v: f'{v:.0f}'})}
 <p class="note">First 15 of {len(anomalies)} flagged trips (gap &gt; 30 s, route discontinuity or jump &gt; 200 m). Full list: results/eda/anomalies.csv.</p>
 <h3>2.4 Features extracted and why</h3>{N.features(ctx)}
-{img(IMG / 'eda_trip_00000041.png', 'Fig 2.5: Folium map, training trip 00000041: GPS fixes (blue), road network near the trip (grey), reference route (green). Interactive HTML: results/maps/eda_trip_00000041.html. Basemap tiles were not reachable from the machine that rendered the screenshot.')}
+{img(map_shot('eda_trip_00000041')[0], 'Fig 2.5: Folium map, training trip 00000041: GPS fixes (blue), road network near the trip (grey), reference route (green). Interactive HTML: results/maps/eda_trip_00000041.html.' + map_shot('eda_trip_00000041')[1])}
 """)
 
     # ------------------------------------------------------------------ 3 models
@@ -159,6 +216,7 @@ def main():
 {img(FIG / 'cmp_logloss_inference.png', 'Fig 3.3: Student-test log loss and inference cost.')}
 {img(FIG / 'cmp_confusion.png', 'Fig 3.4: Confusion matrices (optional diagnostic).')}
 {img(FIG / 'mlp_history.png', 'Fig 3.5: Training history of the MLP, the only model that trains in epochs. No curves are shown for the other models because they have no epoch history.', '75%')}
+{img(FIG / 'feature_importance.png', f'Fig 3.6: Feature importance (total split gain) of the final tuned {best_name} model.', '75%')}
 <h3>3.4 Model selection</h3>{N.selection(ctx)}""")
 
     # ------------------------------------------------------------------ 4 Bayes
@@ -174,23 +232,29 @@ def main():
 {table(hper[hcols], hcols, {c: f3 for c in hcols if c not in ('trip_id', 'n_fixes', 'clf_breaks', 'hmm_breaks')})}
 {img(FIG / 'hmm_per_trip.png', 'Fig 5.1: Classifier-only vs classifier+HMM per student-test trip.')}
 {img(FIG / 'hmm_grid.png', 'Fig 5.2: Decoder grid search on out-of-fold training scores.', '60%')}
-{N.hmm_discussion(ctx)}""")
+{N.hmm_discussion(ctx)}
+{table(err, ['category', 'n'])}
+<p class="note">Remaining HMM errors on reliable student-test fixes, by relation of the predicted arc to the reference arc. Computed by report/build_report.py:error_breakdown.</p>""")
 
     # ------------------------------------------------------------------ 6 Folium
     st_maps = sorted(IMG.glob("student_trip_*.png"))
     worst = hper.sort_values("hmm_top1").iloc[0]["trip_id"]
     bestt = hper.sort_values("hmm_top1").iloc[-1]["trip_id"]
     S.append(f"""<h2>6. Geographical Visualisation Using Folium</h2>{N.folium_text(ctx)}
-{img(IMG / f'student_trip_{bestt}.png', f'Fig 6.1: Student-test trip {bestt}: GPS (blue dots), road network (grey), reference (thick green), classifier-only (orange, dashed), HMM+Viterbi (red). Layer control top right. HTML: results/maps/student_trip_{bestt}.html')}
-{img(IMG / f'student_trip_{worst}.png', f'Fig 6.2: Student-test trip {worst}, the hardest trip for the final pipeline. HTML: results/maps/student_trip_{worst}.html')}
+{img(map_shot(f'student_trip_{bestt}')[0], f'Fig 6.1: Student-test trip {bestt}: GPS (blue dots), road network (grey), reference (thick green), classifier-only (orange, dashed), HMM+Viterbi (red). Layer control top right. HTML: results/maps/student_trip_{bestt}.html.' + map_shot(f'student_trip_{bestt}')[1])}
+{img(map_shot(f'student_trip_{worst}')[0], f'Fig 6.2: Student-test trip {worst}, the hardest trip for the final pipeline. HTML: results/maps/student_trip_{worst}.html.' + map_shot(f'student_trip_{worst}')[1])}
 <p class="note">Interactive maps for all {len(st_maps)} student-test trips and the EDA trips are in results/maps/. They are generated by scripts/05_hmm.py and scripts/01_eda.py using src/pathsnap/viz.py.</p>""")
 
     # ------------------------------------------------------------------ 7 API/UI
-    log_lines = (ROOT / "report" / "api_console_sample.txt").read_text() if (ROOT / "report" / "api_console_sample.txt").exists() else ""
+    shots7 = []
+    for fname, cap in (("ui_laptop2.png", "Fig 7.1: Evaluator UI running on Laptop 2 after selecting an evaluation trip."),
+                       ("api_laptop1.png", "Fig 7.2: API console (CMD) on Laptop 1 showing the request received from Laptop 2 and its response.")):
+        if (SHOTS / fname).exists():
+            shots7.append(img(SHOTS / fname, cap))
+        else:
+            print(f"WARNING: report/screenshots/{fname} missing; section 7 will have no such screenshot. See report/screenshots/README.md")
     S.append(f"""<h2>7. API, UI and Deployment</h2>{N.deployment(ctx)}
-{img(IMG / 'ui.png', 'Fig 7.1: Evaluator UI (Laptop 2) after selecting a trip. During this rehearsal the API served the student-test trips.')}
-<h4>API console output (Laptop 1)</h4><pre class="term">{html.escape(log_lines)}</pre>
-<p class="note">Rehearsal log from <code>uvicorn api.main:app</code>. <b>Replace with the screenshot of the receiving laptop's terminal taken during the evaluation.</b></p>""")
+{''.join(shots7)}""")
 
     S.append(f"<h2>8. Conclusions</h2>{N.conclusions(ctx)}<h2>9. AI-assistance disclosure</h2>{N.ai_disclosure(ctx)}")
 
