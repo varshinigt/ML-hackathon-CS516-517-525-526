@@ -1,0 +1,35 @@
+{
+  "model": "HistGradientBoosting",
+  "family": "Boosting",
+  "config": "300 iters, lr=0.08, 31 leaves",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9252223653701883,
+  "cv_macro_f1_std": 0.015145603845849051,
+  "cv_top1_mean": 0.8795354880834175,
+  "cv_log_loss_mean": 0.10006071852408065,
+  "cv_train_macro_f1_mean": 0.9374197936336971,
+  "st_accuracy": 0.9619762006305244,
+  "st_precision": 0.8835171795007125,
+  "st_recall": 0.8773584905660378,
+  "st_f1": 0.8804270649801457,
+  "st_macro_f1": 0.9289104038079177,
+  "st_log_loss": 0.09483782333268759,
+  "st_top1_acc": 0.8843359640411854,
+  "st_top1_acc_all_labelled": 0.8830897703549061,
+  "st_route_continuity": 0.9501951583152479,
+  "st_route_f1": 0.9353833509439655,
+  "train_time_s": 6.1979728459996295,
+  "n_train_rows": 1121462,
+  "inference_time_s": 0.1305796710003051,
+  "inference_us_per_candidate": 1.0912284582561451,
+  "st_confusion": [
+    [
+      98296,
+      2207
+    ],
+    [
+      2340,
+      16740
+    ]
+  ]
+}

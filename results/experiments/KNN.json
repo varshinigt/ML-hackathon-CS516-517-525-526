@@ -1,0 +1,35 @@
+{
+  "model": "KNN",
+  "family": "Instance-based",
+  "config": "StandardScaler + distance-weighted KNN, k=25, fit on 60k-row subsample",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9095044166112952,
+  "cv_macro_f1_std": 0.016932421367086652,
+  "cv_top1_mean": 0.8641925437927706,
+  "cv_log_loss_mean": 0.16902258028030345,
+  "cv_train_macro_f1_mean": 0.9232457546570588,
+  "st_accuracy": 0.9556375070035038,
+  "st_precision": 0.876345554887711,
+  "st_recall": 0.840566037735849,
+  "st_f1": 0.8580829833337792,
+  "st_macro_f1": 0.9158963123919187,
+  "st_log_loss": 0.14318191207269093,
+  "st_top1_acc": 0.8679767940208017,
+  "st_top1_acc_all_labelled": 0.8667536534446764,
+  "st_route_continuity": 0.943524967815982,
+  "st_route_f1": 0.9253549233825094,
+  "train_time_s": 0.013523048000024573,
+  "n_train_rows": 60000,
+  "inference_time_s": 5.561080921999974,
+  "inference_us_per_candidate": 46.47285227681049,
+  "st_confusion": [
+    [
+      98240,
+      2263
+    ],
+    [
+      3042,
+      16038
+    ]
+  ]
+}

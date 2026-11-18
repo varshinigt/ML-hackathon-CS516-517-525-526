@@ -1,0 +1,35 @@
+{
+  "model": "LogisticRegression",
+  "family": "Linear / probabilistic",
+  "config": "StandardScaler + L2 logistic regression, C=1.0, lbfgs",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9018549518036185,
+  "cv_macro_f1_std": 0.020020547873393003,
+  "cv_top1_mean": 0.8675912758119599,
+  "cv_log_loss_mean": 0.1468680292367935,
+  "cv_train_macro_f1_mean": 0.9050339801801452,
+  "st_accuracy": 0.9498089193279982,
+  "st_precision": 0.8426071465996018,
+  "st_recall": 0.8428721174004193,
+  "st_f1": 0.8427396111722476,
+  "st_macro_f1": 0.9064394573274173,
+  "st_log_loss": 0.13983207941055298,
+  "st_top1_acc": 0.8673496053938222,
+  "st_top1_acc_all_labelled": 0.8661273486430062,
+  "st_route_continuity": 0.935404052517795,
+  "st_route_f1": 0.9231389404273903,
+  "train_time_s": 2.4839695910000046,
+  "n_train_rows": 1121462,
+  "inference_time_s": 0.017138179999960812,
+  "inference_us_per_candidate": 0.14322037722571565,
+  "st_confusion": [
+    [
+      97499,
+      3004
+    ],
+    [
+      2998,
+      16082
+    ]
+  ]
+}

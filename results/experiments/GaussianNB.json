@@ -1,0 +1,35 @@
+{
+  "model": "GaussianNB",
+  "family": "Linear / probabilistic",
+  "config": "Gaussian NB, var_smoothing=1e-9",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.8147415576089564,
+  "cv_macro_f1_std": 0.019511215625489492,
+  "cv_top1_mean": 0.8294672606356011,
+  "cv_log_loss_mean": 0.8517693281173706,
+  "cv_train_macro_f1_mean": 0.8129372744737641,
+  "st_accuracy": 0.8659341210707208,
+  "st_precision": 0.5469819347678648,
+  "st_recall": 0.9299266247379455,
+  "st_f1": 0.6888077953336698,
+  "st_macro_f1": 0.8016856166299999,
+  "st_log_loss": 0.887890100479126,
+  "st_top1_acc": 0.8246485130402968,
+  "st_top1_acc_all_labelled": 0.8234864300626304,
+  "st_route_continuity": 0.9416759909545755,
+  "st_route_f1": 0.8867149794888867,
+  "train_time_s": 0.292782418999991,
+  "n_train_rows": 1121462,
+  "inference_time_s": 0.018018384999891168,
+  "inference_us_per_candidate": 0.1505760761462705,
+  "st_confusion": [
+    [
+      85808,
+      14695
+    ],
+    [
+      1337,
+      17743
+    ]
+  ]
+}

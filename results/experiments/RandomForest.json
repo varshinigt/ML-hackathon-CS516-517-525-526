@@ -1,0 +1,35 @@
+{
+  "model": "RandomForest",
+  "family": "Ensemble (bagging)",
+  "config": "200 trees, max_depth=18, min_samples_leaf=20",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9252071146396957,
+  "cv_macro_f1_std": 0.015455584567674156,
+  "cv_top1_mean": 0.8791811765053135,
+  "cv_log_loss_mean": 0.09765375427655272,
+  "cv_train_macro_f1_mean": 0.9419138038825556,
+  "st_accuracy": 0.9634479817365345,
+  "st_precision": 0.9009431390721256,
+  "st_recall": 0.8661425576519917,
+  "st_f1": 0.8832001710178232,
+  "st_macro_f1": 0.9307669958849841,
+  "st_log_loss": 0.08873254426342102,
+  "st_top1_acc": 0.8884126901165526,
+  "st_top1_acc_all_labelled": 0.887160751565762,
+  "st_route_continuity": 0.9487762539986466,
+  "st_route_f1": 0.9392776764492456,
+  "train_time_s": 159.27244154100003,
+  "n_train_rows": 1121462,
+  "inference_time_s": 0.507998488000112,
+  "inference_us_per_candidate": 4.2452427901699945,
+  "st_confusion": [
+    [
+      98686,
+      1817
+    ],
+    [
+      2554,
+      16526
+    ]
+  ]
+}

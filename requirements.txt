@@ -1,0 +1,15 @@
+# Versions used to produce every result in results/ (Python 3.13).
+# The saved .joblib models must be loaded with the same scikit-learn / LightGBM versions.
+# If these cannot be installed, re-run scripts 02-06 to retrain (about 1 hour on 4 cores).
+numpy==2.5.3
+pandas==3.0.5
+scipy==1.18.1
+scikit-learn==1.9.1
+lightgbm==4.7.0
+optuna==5.1.0
+joblib==1.6.0
+matplotlib==3.11.2
+folium==1.0.0
+fastapi==0.163.2
+uvicorn==0.54.0
+pydantic==2.13.5

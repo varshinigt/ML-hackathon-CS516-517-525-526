@@ -1,0 +1,10 @@
+{
+  "params": {
+    "beta": 15.0,
+    "w_emission": 1.0,
+    "gap_s": 30.0,
+    "unreachable_logp": -50.0,
+    "p_floor": 0.0001
+  },
+  "selected_on": "defaults (Newson & Krumm style); replaced by scripts/05_hmm.py grid search"
+}

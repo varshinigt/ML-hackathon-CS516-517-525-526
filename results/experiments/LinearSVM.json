@@ -1,0 +1,35 @@
+{
+  "model": "LinearSVM",
+  "family": "Kernel-based",
+  "config": "StandardScaler + LinearSVC C=0.5, Platt-calibrated (3-fold), 150k-row subsample",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.900895781852736,
+  "cv_macro_f1_std": 0.02031981851947952,
+  "cv_top1_mean": 0.8680986252379522,
+  "cv_log_loss_mean": 0.146707735994359,
+  "cv_train_macro_f1_mean": 0.9039805326506258,
+  "st_accuracy": 0.9491984646647099,
+  "st_precision": 0.8389720064640567,
+  "st_recall": 0.8435010482180294,
+  "st_f1": 0.8412304314873377,
+  "st_macro_f1": 0.905495979097128,
+  "st_log_loss": 0.14100923510984223,
+  "st_top1_acc": 0.8670360110803325,
+  "st_top1_acc_all_labelled": 0.8658141962421712,
+  "st_route_continuity": 0.9332407780459422,
+  "st_route_f1": 0.9230140578185498,
+  "train_time_s": 1.7587316479998663,
+  "n_train_rows": 150000,
+  "inference_time_s": 0.03392199800009621,
+  "inference_us_per_candidate": 0.2834794213758322,
+  "st_confusion": [
+    [
+      97414,
+      3089
+    ],
+    [
+      2986,
+      16094
+    ]
+  ]
+}

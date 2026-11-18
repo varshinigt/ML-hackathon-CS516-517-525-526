@@ -1,0 +1,35 @@
+{
+  "model": "MLP",
+  "family": "Neural network",
+  "config": "StandardScaler + MLP 64-32 ReLU, Adam lr=1e-3, early stopping, 300k-row subsample",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9197227719356633,
+  "cv_macro_f1_std": 0.015373188792025315,
+  "cv_top1_mean": 0.8751059609425779,
+  "cv_log_loss_mean": 0.10775981843471527,
+  "cv_train_macro_f1_mean": 0.9274786247341682,
+  "st_accuracy": 0.9600361255362384,
+  "st_precision": 0.8933817461627331,
+  "st_recall": 0.8511006289308176,
+  "st_f1": 0.8717288026411144,
+  "st_macro_f1": 0.9240298619983873,
+  "st_log_loss": 0.09917725622653961,
+  "st_top1_acc": 0.8786912663983694,
+  "st_top1_acc_all_labelled": 0.8774530271398747,
+  "st_route_continuity": 0.9537176453233316,
+  "st_route_f1": 0.9391785138008437,
+  "train_time_s": 11.359418487999847,
+  "n_train_rows": 300000,
+  "inference_time_s": 0.02226967699971283,
+  "inference_us_per_candidate": 0.18610328171375304,
+  "st_confusion": [
+    [
+      98565,
+      1938
+    ],
+    [
+      2841,
+      16239
+    ]
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "model_name": "LightGBM (tuned)",
+  "model_path": "models/final_LightGBM_tuned.joblib",
+  "hmm_config": "artifacts/hmm_config.json",
+  "features": [
+    "dist",
+    "dist_rank",
+    "dist_minus_min",
+    "dist_ratio",
+    "n_cands",
+    "heading_diff",
+    "heading_valid",
+    "heading_x_valid",
+    "frac",
+    "arc_len",
+    "speed",
+    "dt_prev",
+    "dt_next",
+    "dist_prev",
+    "dist_next",
+    "dist_win_mean",
+    "near_prev_top1",
+    "conn_prev_top1",
+    "conn_next_top1"
+  ],
+  "candidates": {
+    "radius_m": 60.0,
+    "fallback_radius_m": 200.0,
+    "k": 8,
+    "directed": true
+  },
+  "trained_on": "80 training trips (data/raw/train)"
+}

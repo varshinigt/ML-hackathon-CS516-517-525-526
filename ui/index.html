@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PathSnap Evaluator</title>
+<link rel="stylesheet" href="vendor/leaflet.css">
+<style>
+  :root { --bg:#f6f7f9; --panel:#fff; --ink:#1d2330; --muted:#667085; --line:#e3e6eb; --accent:#d62728; --gps:#1f77b4; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { padding:12px 20px; background:var(--panel); border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin:0 12px 0 0; }
+  header input { width:260px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; }
+  .status { color:var(--muted); }
+  main { display:grid; grid-template-columns: 300px 1fr; height: calc(100vh - 58px); }
+  aside { background:var(--panel); border-right:1px solid var(--line); overflow:auto; padding:14px; }
+  aside h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:6px 0 8px; }
+  .trip { display:flex; justify-content:space-between; width:100%; text-align:left; padding:9px 10px; margin-bottom:6px;
+          border:1px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; font:inherit; }
+  .trip:hover { border-color:#9aa4b2; } .trip.active { border-color:var(--accent); background:#fff4f4; }
+  .trip small { color:var(--muted); }
+  table { width:100%; border-collapse:collapse; margin-top:4px; }
+  td { padding:5px 2px; border-bottom:1px solid var(--line); } td:last-child { text-align:right; font-variant-numeric: tabular-nums; }
+  .big { font-size:28px; font-weight:700; color:var(--accent); }
+  #map { height:100%; }
+  .legend { background:#fff; padding:6px 10px; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,.2); line-height:1.7; }
+  .sw { display:inline-block; width:18px; height:4px; vertical-align:middle; margin-right:6px; }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; height:auto; } #map { height:70vh; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>PathSnap evaluator</h1>
+  <label>API URL <input id="api" value="http://localhost:8000"></label>
+  <button id="connect">Load trips</button>
+  <span class="status" id="status">Not connected</span>
+</header>
+<main>
+  <aside>
+    <h2>Evaluation trips</h2>
+    <div id="trips"></div>
+    <h2 style="margin-top:18px">Result</h2>
+    <div id="result" class="status">Select a trip to run the full prediction pipeline on the API.</div>
+  </aside>
+  <div id="map"></div>
+</main>
+<script src="vendor/leaflet.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const saved = localStorage.getItem("pathsnap_api"); if (saved) $("api").value = saved;
+const map = L.map("map").setView([52.95, -1.15], 12);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+  { attribution: "&copy; OpenStreetMap, &copy; CARTO", maxZoom: 20 }).addTo(map);
+let layers = L.layerGroup().addTo(map);
+const legend = L.control({ position: "bottomright" });
+legend.onAdd = () => { const d = L.DomUtil.create("div", "legend");
+  d.innerHTML = '<span class="sw" style="background:#1f77b4"></span>GPS observations<br>' +
+                '<span class="sw" style="background:#d62728"></span>Predicted route (HMM)'; return d; };
+legend.addTo(map);
+
+const api = () => $("api").value.replace(/\/$/, "");
+const pct = (v) => v == null ? "n/a" : (100 * v).toFixed(2) + " %";
+
+async function loadTrips() {
+  localStorage.setItem("pathsnap_api", $("api").value);
+  $("status").textContent = "Connecting…";
+  try {
+    const r = await fetch(api() + "/trips"); if (!r.ok) throw new Error(r.status);
+    const { trips } = await r.json();
+    $("trips").innerHTML = "";
+    trips.forEach((t) => {
+      const b = document.createElement("button"); b.className = "trip";
+      b.innerHTML = `<span>Trip ${t.trip_id}</span><small>${t.n_gps_points} fixes</small>`;
+      b.onclick = () => runTrip(t.trip_id, b); $("trips").appendChild(b);
+    });
+    $("status").textContent = `Connected: ${trips.length} trips`;
+  } catch (e) { $("status").textContent = "Could not reach API (" + e.message + ")"; }
+}
+
+async function runTrip(id, btn) {
+  document.querySelectorAll(".trip").forEach((b) => b.classList.remove("active")); btn.classList.add("active");
+  $("result").textContent = `Running pipeline for trip ${id}…`;
+  const r = await fetch(api() + "/predict", { method: "POST", headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ trip_id: id }) });
+  if (!r.ok) { $("result").textContent = "API error " + r.status; return; }
+  const d = await r.json();
+  layers.clearLayers();
+  const step = Math.max(1, Math.floor(d.gps.length / 4000));
+  d.gps.filter((_, i) => i % step === 0).forEach(([lon, lat]) =>
+    L.circleMarker([lat, lon], { radius: 2, color: "#1f77b4", weight: 0, fillOpacity: .8 }).addTo(layers));
+  d.predicted_route.forEach((seg) => L.polyline(seg.map(([lon, lat]) => [lat, lon]), { color: "#d62728", weight: 4 }).addTo(layers));
+  map.fitBounds(L.latLngBounds(d.gps.map(([lon, lat]) => [lat, lon])), { padding: [20, 20] });
+  const m = d.metrics || {};
+  $("result").innerHTML = `
+    <div>Top-1 accuracy (HMM)</div><div class="big">${pct(m.hmm_top1_accuracy)}</div>
+    <table>
+      <tr><td>Classifier-only Top-1</td><td>${pct(m.classifier_top1_accuracy)}</td></tr>
+      <tr><td>Top-1 incl. unreliable labels</td><td>${pct(m.hmm_top1_accuracy_all_fixes)}</td></tr>
+      <tr><td>Route continuity</td><td>${pct(m.hmm_route_continuity)}</td></tr>
+      <tr><td>Route breaks</td><td>${m.hmm_route_breaks ?? "n/a"}</td></tr>
+      <tr><td>Route F1 (length-weighted)</td><td>${pct(m.hmm_route_f1)}</td></tr>
+      <tr><td>GPS fixes / scored</td><td>${m.n_fixes ?? d.gps.length} / ${m.n_scored_fixes ?? "n/a"}</td></tr>
+      <tr><td>Model</td><td>${d.model}</td></tr>
+      <tr><td>API processing time</td><td>${d.timings_s.total.toFixed(2)} s</td></tr>
+    </table>`;
+}
+$("connect").onclick = loadTrips;
+</script>
+</body>
+</html>

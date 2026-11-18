@@ -1,0 +1,35 @@
+{
+  "model": "LightGBM",
+  "family": "Boosting",
+  "config": "400 trees, lr=0.05, 63 leaves, bagging 0.8/0.8",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9264793643068684,
+  "cv_macro_f1_std": 0.015703335665035238,
+  "cv_top1_mean": 0.880439792615579,
+  "cv_log_loss_mean": 0.09894906783829864,
+  "cv_train_macro_f1_mean": 0.9512731661280901,
+  "st_accuracy": 0.964744152596941,
+  "st_precision": 0.8952770981810446,
+  "st_recall": 0.8822327044025158,
+  "st_f1": 0.8887070376432079,
+  "st_macro_f1": 0.9338807539719388,
+  "st_log_loss": 0.08607607973297121,
+  "st_top1_acc": 0.893534730570219,
+  "st_top1_acc_all_labelled": 0.8922755741127348,
+  "st_route_continuity": 0.9507633959165579,
+  "st_route_f1": 0.9415924328900867,
+  "train_time_s": 11.079259388999617,
+  "n_train_rows": 1121462,
+  "inference_time_s": 0.6002662910000254,
+  "inference_us_per_candidate": 5.0163065525686745,
+  "st_confusion": [
+    [
+      98534,
+      1969
+    ],
+    [
+      2247,
+      16833
+    ]
+  ]
+}

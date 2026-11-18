@@ -1,0 +1,18 @@
+{
+  "model": "LightGBM",
+  "objective": "mean 3-fold GroupKFold observation Top-1 accuracy (train trips)",
+  "sampler": "Optuna TPE, seed 42, 8 random start-up trials",
+  "n_trials": 30,
+  "best_value": 0.8859504562349892,
+  "best_params": {
+    "n_estimators": 650,
+    "learning_rate": 0.011701505534591438,
+    "num_leaves": 214,
+    "min_child_samples": 257,
+    "subsample": 0.8987256635776459,
+    "colsample_bytree": 0.8810675677265736,
+    "reg_lambda": 5.294606726588959,
+    "reg_alpha": 0.16944963941901148
+  },
+  "search_seconds": 2012.4641239643097
+}

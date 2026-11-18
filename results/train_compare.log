@@ -1,0 +1,70 @@
+== LogisticRegression
+   fold 0: val macroF1=0.9015 top1=0.8788 train macroF1=0.9043 (1.9s)
+   fold 1: val macroF1=0.8877 top1=0.8506 train macroF1=0.9098 (1.8s)
+   fold 2: val macroF1=0.9348 top1=0.9106 train macroF1=0.8944 (2.2s)
+   fold 3: val macroF1=0.8841 top1=0.8392 train macroF1=0.9093 (1.7s)
+   fold 4: val macroF1=0.9010 top1=0.8589 train macroF1=0.9073 (1.9s)
+   student-test: top1=0.8673 macroF1=0.9064 logloss=0.1398 continuity=0.9354
+== GaussianNB
+   fold 0: val macroF1=0.8399 top1=0.8416 train macroF1=0.8013 (0.3s)
+   fold 1: val macroF1=0.8135 top1=0.8205 train macroF1=0.8290 (0.2s)
+   fold 2: val macroF1=0.7908 top1=0.8392 train macroF1=0.7984 (0.2s)
+   fold 3: val macroF1=0.8273 top1=0.8077 train macroF1=0.8253 (0.2s)
+   fold 4: val macroF1=0.8022 top1=0.8385 train macroF1=0.8107 (0.2s)
+   student-test: top1=0.8246 macroF1=0.8017 logloss=0.8879 continuity=0.9417
+== KNN
+   fold 0: val macroF1=0.9132 top1=0.8742 train macroF1=0.9216 (0.0s)
+   fold 1: val macroF1=0.8948 top1=0.8441 train macroF1=0.9278 (0.0s)
+   fold 2: val macroF1=0.9370 top1=0.9084 train macroF1=0.9136 (0.0s)
+   fold 3: val macroF1=0.8978 top1=0.8396 train macroF1=0.9257 (0.0s)
+   fold 4: val macroF1=0.9048 top1=0.8546 train macroF1=0.9275 (0.0s)
+   student-test: top1=0.8680 macroF1=0.9159 logloss=0.1432 continuity=0.9435
+== DecisionTree
+   fold 0: val macroF1=0.9312 top1=0.8909 train macroF1=0.9338 (13.8s)
+   fold 1: val macroF1=0.9050 top1=0.8550 train macroF1=0.9410 (11.7s)
+   fold 2: val macroF1=0.9433 top1=0.9107 train macroF1=0.9267 (12.1s)
+   fold 3: val macroF1=0.9092 top1=0.8471 train macroF1=0.9363 (12.4s)
+   fold 4: val macroF1=0.9156 top1=0.8637 train macroF1=0.9369 (12.9s)
+   student-test: top1=0.8889 macroF1=0.9280 logloss=0.0980 continuity=0.9438
+== RandomForest
+   fold 0: val macroF1=0.9342 top1=0.8923 train macroF1=0.9410 (135.4s)
+   fold 1: val macroF1=0.9085 top1=0.8590 train macroF1=0.9454 (113.3s)
+   fold 2: val macroF1=0.9467 top1=0.9176 train macroF1=0.9344 (112.3s)
+   fold 3: val macroF1=0.9138 top1=0.8550 train macroF1=0.9436 (111.6s)
+   fold 4: val macroF1=0.9229 top1=0.8720 train macroF1=0.9453 (115.1s)
+   student-test: top1=0.8884 macroF1=0.9308 logloss=0.0887 continuity=0.9488
+== ExtraTrees
+   fold 0: val macroF1=0.9243 top1=0.8832 train macroF1=0.9233 (28.1s)
+   fold 1: val macroF1=0.9026 top1=0.8545 train macroF1=0.9288 (23.8s)
+   fold 2: val macroF1=0.9440 top1=0.9160 train macroF1=0.9148 (22.7s)
+   fold 3: val macroF1=0.9042 top1=0.8489 train macroF1=0.9268 (21.4s)
+   fold 4: val macroF1=0.9165 top1=0.8683 train macroF1=0.9262 (20.1s)
+   student-test: top1=0.8760 macroF1=0.9215 logloss=0.1095 continuity=0.9479
+== HistGradientBoosting
+   fold 0: val macroF1=0.9332 top1=0.8921 train macroF1=0.9357 (5.1s)
+   fold 1: val macroF1=0.9091 top1=0.8586 train macroF1=0.9402 (4.6s)
+   fold 2: val macroF1=0.9468 top1=0.9171 train macroF1=0.9311 (5.4s)
+   fold 3: val macroF1=0.9141 top1=0.8553 train macroF1=0.9394 (4.9s)
+   fold 4: val macroF1=0.9229 top1=0.8746 train macroF1=0.9406 (4.5s)
+   student-test: top1=0.8843 macroF1=0.9289 logloss=0.0948 continuity=0.9502
+== LightGBM
+   fold 0: val macroF1=0.9366 top1=0.8959 train macroF1=0.9510 (10.0s)
+   fold 1: val macroF1=0.9094 top1=0.8590 train macroF1=0.9527 (8.9s)
+   fold 2: val macroF1=0.9481 top1=0.9184 train macroF1=0.9445 (8.8s)
+   fold 3: val macroF1=0.9162 top1=0.8569 train macroF1=0.9523 (8.5s)
+   fold 4: val macroF1=0.9221 top1=0.8720 train macroF1=0.9557 (11.3s)
+   student-test: top1=0.8935 macroF1=0.9339 logloss=0.0861 continuity=0.9508
+== LinearSVM
+   fold 0: val macroF1=0.8998 top1=0.8803 train macroF1=0.9024 (1.5s)
+   fold 1: val macroF1=0.8874 top1=0.8513 train macroF1=0.9093 (1.6s)
+   fold 2: val macroF1=0.9345 top1=0.9109 train macroF1=0.8935 (1.4s)
+   fold 3: val macroF1=0.8824 top1=0.8387 train macroF1=0.9089 (1.7s)
+   fold 4: val macroF1=0.9004 top1=0.8592 train macroF1=0.9059 (1.7s)
+   student-test: top1=0.8670 macroF1=0.9055 logloss=0.1410 continuity=0.9332
+== MLP
+   fold 0: val macroF1=0.9269 top1=0.8872 train macroF1=0.9258 (11.9s)
+   fold 1: val macroF1=0.9050 top1=0.8548 train macroF1=0.9315 (15.1s)
+   fold 2: val macroF1=0.9430 top1=0.9139 train macroF1=0.9187 (18.9s)
+   fold 3: val macroF1=0.9096 top1=0.8518 train macroF1=0.9308 (13.0s)
+   fold 4: val macroF1=0.9141 top1=0.8679 train macroF1=0.9306 (19.2s)
+   student-test: top1=0.8787 macroF1=0.9240 logloss=0.0992 continuity=0.9537

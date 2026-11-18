@@ -1,0 +1,35 @@
+{
+  "model": "ExtraTrees",
+  "family": "Ensemble (bagging)",
+  "config": "200 trees, max_depth=18, min_samples_leaf=20",
+  "seed": 42,
+  "cv_macro_f1_mean": 0.9182999317591805,
+  "cv_macro_f1_std": 0.0169020886844989,
+  "cv_top1_mean": 0.8741896011266228,
+  "cv_log_loss_mean": 0.11638731510021502,
+  "cv_train_macro_f1_mean": 0.9239826285679739,
+  "st_accuracy": 0.9590326384185043,
+  "st_precision": 0.8986338336987688,
+  "st_recall": 0.8377358490566038,
+  "st_f1": 0.8671169338432745,
+  "st_macro_f1": 0.9214501520016426,
+  "st_log_loss": 0.1095094473353659,
+  "st_top1_acc": 0.8759734490147912,
+  "st_top1_acc_all_labelled": 0.8747390396659708,
+  "st_route_continuity": 0.9478753290660651,
+  "st_route_f1": 0.9315985328278842,
+  "train_time_s": 30.003106917000196,
+  "n_train_rows": 1121462,
+  "inference_time_s": 0.5069773179998265,
+  "inference_us_per_candidate": 4.236709074649863,
+  "st_confusion": [
+    [
+      98700,
+      1803
+    ],
+    [
+      3096,
+      15984
+    ]
+  ]
+}

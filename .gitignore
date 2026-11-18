@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+data/processed/
+logs/
+.venv/
+# raw data is distributed by the organisers; place it under data/raw/ (see README)
+data/raw/
+results/preds/
+report/api_console_raw.txt
+models/RandomForest.joblib
+models/ExtraTrees.joblib
