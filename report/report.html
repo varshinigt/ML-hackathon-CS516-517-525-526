@@ -16,7 +16,12 @@ pre.term { background: #111; color: #d7ffd7; font-size: 7.5pt; padding: 8px; whi
 ul { margin: 4px 0; } li { margin: 2px 0; }
 </style></head><body><h1>PathSnap: Map-Matching and Route Reconstruction</h1>
 <p class="sub">UE24CS352A Machine Learning Hackathon, Technical Report. Team CS516 · CS517 · CS525 · CS526</p>
-<div class="box"><b>Summary.</b> We frame map-matching as candidate ranking. Every GPS fix gets up to 8 nearby road arcs. A classifier scores each (fix, arc) pair, and an HMM with Viterbi decoding turns these scores into a connected route. We compared 10 models from 7 algorithm families with trip-grouped cross-validation. We selected and Bayesian-tuned <b>LightGBM</b>. On the 10 student-testing trips, the classifier alone reaches 89.74% observation-level Top-1 accuracy, and HMM decoding raises it to <b>93.43%</b>. Route continuity rises from 98.59% to 99.93%, and breaks per trip fall from 29.1 to 1.2. The same pipeline runs behind a FastAPI service with a separate evaluator UI.</div><h2>2. Dataset Understanding and Exploratory Data Analysis</h2>
+<div class="box"><b>Summary.</b> We frame map-matching as candidate ranking. Every GPS fix gets up to 8 nearby road arcs. A classifier scores each (fix, arc) pair, and an HMM with Viterbi decoding turns these scores into a connected route. We compared 10 models from 7 algorithm families with trip-grouped cross-validation. We selected and Bayesian-tuned <b>LightGBM</b>. On the 10 student-testing trips, the classifier alone reaches 89.74% observation-level Top-1 accuracy, and HMM decoding raises it to <b>93.43%</b>. Route continuity rises from 98.59% to 99.93%, and breaks per trip fall from 29.1 to 1.2. The same pipeline runs behind a FastAPI service with a separate evaluator UI.</div>
+<h2>1. Problem Overview</h2><p>GPS fixes are noisy: they drift off the road, onto parallel streets and across junctions. The task is to assign
+every fix of a trip to the road segment (arc) the vehicle was actually on, so that the predicted segments form a realistic, connected route.
+We build this as a pipeline: candidate generation → a learned candidate classifier (5+ models compared, the best one Bayesian-tuned)
+→ HMM/Viterbi decoding over the road network. The pipeline is served by a FastAPI backend (Laptop 1) and an evaluator UI (Laptop 2).
+Sections 2–7 follow the structure required by the deliverables document.</p><h2>2. Dataset Understanding and Exploratory Data Analysis</h2>
 <p class="note">Partitions used: all EDA uses the 80 training and 10 student-testing trips. The 10 evaluator trips were not available to us and are never read by any analysis or training script.</p>
 <h3>2.1 Raw data and how the files relate</h3><p>Each trip is a folder with four header-less, whitespace-separated files:</p>
 <ul>
@@ -34,10 +39,12 @@ The reference routes are continuous chains (the head of one arc is the tail of t
 11 trips with 14 breaks in total.</p>
 <table><thead><tr><th>partition</th><th>trips</th><th>gps_points</th><th>median_fixes</th><th>median_arcs</th><th>max_gap_s</th><th>missing_values</th></tr></thead><tbody><tr><td>student_test</td><td>10</td><td>19160</td><td>1420.0</td><td>13145.0</td><td>210.0</td><td>0</td></tr><tr><td>train</td><td>80</td><td>208417</td><td>1529.0</td><td>19526.5</td><td>153064.0</td><td>0</td></tr><tr><td>eval_test</td><td>10</td><td>withheld</td><td>-</td><td>-</td><td>-</td><td>-</td></tr></tbody></table>
 <h3>2.2 How we preprocessed the data</h3><ol>
-<li><b>Coordinates.</b> Longitude and latitude are angles, so distances in degrees are meaningless (one degree of longitude
-is about 67 km here, against 111 km for a degree of latitude). Each trip is projected onto a local tangent plane
-(equirectangular, centred on the trip mean): x = R·Δλ·cos φ₀, y = R·Δφ. For trips a few km across, the error against
-the true geodesic distance is far below the GPS noise. All later geometry is in metres.</li>
+<li><b>Coordinates.</b> Longitude and latitude are angles, so distances in degrees are not physical distances: a degree of
+latitude is about 111 km everywhere, but a degree of longitude is 111 km · cos(latitude), which varies from trip to trip
+because the trips are spread across the globe (§2.3). Each trip is therefore projected onto its own local tangent plane
+(equirectangular, centred on that trip's mean position): x = R·Δλ·cos φ₀, y = R·Δφ. The largest trip extent is
+75 km. We did not measure the projection error against geodesic distance for our trips. Our
+choice rests on the standard result that this approximation is accurate at city scale. All later geometry is in metres.</li>
 <li><b>Cleaning.</b> We drop fixes with missing or out-of-range coordinates and duplicate timestamps, sort by time, and
 remove isolated speed spikes (fixes reached from <i>and</i> left at more than 70 m/s). Across the 90 trips this removed
 0 invalid fixes, 0 duplicate timestamps and 68 spikes.
@@ -60,15 +67,15 @@ candidate set (the <i>candidate miss rate</i>) for 2.78% of training fixes and
 </ol>
 <h3>2.3 Patterns observed during exploration</h3><ul>
 <li>Sampling is essentially 1 Hz: a median of 99.2% of steps are exactly 1 s. However, 30 trips have
-gaps longer than 30 s, and the longest is 42.5 h (the vehicle parked and the log resumed). The decoder must therefore
-handle gaps explicitly.</li>
+gaps longer than 30 s, and the longest is 42.5 h. The decoder must therefore handle gaps explicitly.</li>
 <li>Trips differ a lot in length, from 262 to 19,313 fixes (median 1,496). Cross-validation is therefore grouped
 by trip, and accuracy is pooled over fixes.</li>
-<li>All trips lie in one region (mean position about 17.20° E, 45.19° N, in the English East Midlands), with
-extents up to 75 km. A local projection per trip is accurate enough.</li>
-<li>The networks are dense, with a mean arc length of 41 m (median over trips). Parallel and opposite-direction
-arcs sit within GPS-noise distance of each other, so the nearest arc is often wrong: it is correct for only
-54.81% of student-test fixes. Heading and temporal context are needed to separate such arcs.</li>
+<li>The trips do <b>not</b> share one region. Per-trip mean longitudes range from -100.3° to 137.2°
+and mean latitudes from -34.6° to 61.7°, so each trip needs its own projection (we use one per trip, never one for the whole dataset).
+Within a trip the extent is at most 75 km (median 8.4 km).</li>
+<li>The networks are dense, with a mean arc length of 41 m (median over trips), and
+92% of arcs have an opposite-direction twin on the same geometry. Distance alone cannot separate such twins, and the
+nearest arc is the reference arc for only 54.81% of student-test fixes. This motivated the heading and temporal-context features.</li>
 <li>The networks are not fully connected: a median of 19 weakly connected components per trip, and
 0 isolated nodes in total. The HMM must therefore tolerate unreachable transitions.</li>
 </ul>
@@ -87,7 +94,7 @@ arcs sit within GPS-noise distance of each other, so the nearest arc is often wr
 <tr><td>Motion</td><td>speed, dt_prev, dt_next</td><td>GPS noise and gap context. Slow vehicles have unreliable headings.</td></tr>
 <tr><td>Temporal context</td><td>dist_prev, dist_next, dist_win_mean (±2 fixes)</td><td>A true arc stays close to neighbouring fixes, while a crossing street is close for only one fix.</td></tr>
 <tr><td>Connectivity</td><td>near_prev_top1, conn_prev_top1, conn_next_top1</td><td>Whether the arc is the same as, or connected to, the nearest arc of the previous and next fix. These are label-free network cues.</td></tr></table>
-<figure><img src="../report/img/eda_trip_00000041.png" style="width:100%"><figcaption>Fig 2.5: Folium map, training trip 00000041: GPS fixes (blue), road network near the trip (grey), reference route (green). Interactive HTML: results/maps/eda_trip_00000041.html. Basemap tiles were not reachable from the machine that rendered the screenshot.</figcaption></figure>
+<figure><img src="../report/img/eda_trip_00000041.png" style="width:100%"><figcaption>Fig 2.5: Folium map, training trip 00000041: GPS fixes (blue), road network near the trip (grey), reference route (green). Interactive HTML: results/maps/eda_trip_00000041.html. The basemap is missing because map tiles could not be downloaded on the machine that rendered this screenshot.</figcaption></figure>
 <h2>3. Model Experimentation and Comparison</h2><p><b>Learning task.</b> Binary classification of candidate rows (label 1 if the arc is the fix's reference arc).
 Per fix, the arg-max of the predicted probability gives the classifier-only prediction. The probabilities also become the
 HMM emissions.</p>
@@ -172,6 +179,7 @@ Training 0.3 s on 1,121,462 rows, inference 0.15 µs per candidate.<br><b>Underf
 <figure><img src="../results/figures/cmp_logloss_inference.png" style="width:100%"><figcaption>Fig 3.3: Student-test log loss and inference cost.</figcaption></figure>
 <figure><img src="../results/figures/cmp_confusion.png" style="width:100%"><figcaption>Fig 3.4: Confusion matrices (optional diagnostic).</figcaption></figure>
 <figure><img src="../results/figures/mlp_history.png" style="width:75%"><figcaption>Fig 3.5: Training history of the MLP, the only model that trains in epochs. No curves are shown for the other models because they have no epoch history.</figcaption></figure>
+<figure><img src="../results/figures/feature_importance.png" style="width:75%"><figcaption>Fig 3.6: Feature importance (total split gain) of the final tuned LightGBM model.</figcaption></figure>
 <h3>3.4 Model selection</h3><p>We selected <b>LightGBM</b> using the cross-validation Top-1 accuracy on the training trips
 (88.04%, against 87.95% for the runner-up HistGradientBoosting). The student-testing trips confirmed this choice but did
 not drive it. The other selection criteria also point the same way:</p>
@@ -191,7 +199,14 @@ The ranges centre on LightGBM defaults and widen in both directions: towards sim
 <li><b>Did tuning help?</b> Yes. Student-test Top-1 went from 89.35% to 89.74%,
 CV macro F1 from 0.9281 to 0.9288, and log loss from 0.0861 to 0.0845. Inference time changed from 0.61 s to
 3.41 s for the whole student-test partition. Both variants used the same partitions and metrics. The best trial improved on the worst by
-0.62% CV Top-1.</li></ol>
+0.62% CV Top-1.</li>
+<li><b>Why the untuned CV numbers differ from §3:</b> §3 uses 5-fold GroupKFold (untuned LightGBM CV macro F1 0.9265), while the
+Bayesian search and this table use 3-fold GroupKFold (0.9281). We used fewer folds to keep 30 trials affordable. Each fold then trains on fewer trips, and
+different trips land in each validation fold. Within this table, tuned and untuned use the identical 3 folds.</li>
+<li><b>Cost trade-off:</b> the tuned model scores the 119,663 student-test candidate rows in 3.41 s against 0.61 s untuned,
+about 6× slower (650 trees with up to 214 leaves, against 400 × 63). The gain is 0.4 points of Top-1 and a lower log loss.
+We kept the tuned model because the API processes one trip at a time and classifier time per trip stays around a second, which the evaluator would not notice.
+If inference cost mattered (for example a fleet of vehicles in real time), the untuned model would be the better choice.</li></ol>
 <table><thead><tr><th>variant</th><th>cv_macro_f1</th><th>cv_top1</th><th>st_top1_acc</th><th>st_macro_f1</th><th>st_log_loss</th><th>st_route_continuity</th><th>train_time_s</th><th>inference_time_s</th><th>inference_us_per_candidate</th></tr></thead><tbody><tr><td>untuned</td><td>0.9281</td><td>0.8844</td><td>0.8935</td><td>0.9339</td><td>0.0861</td><td>0.9845</td><td>11.3359</td><td>0.6140</td><td>5.1310</td></tr><tr><td>tuned</td><td>0.9288</td><td>0.8860</td><td>0.8974</td><td>0.9368</td><td>0.0845</td><td>0.9859</td><td>29.1203</td><td>3.4119</td><td>28.5124</td></tr></tbody></table>
 <figure><img src="../results/figures/bayes_opt.png" style="width:100%"><figcaption>Fig 4.1: Optuna TPE trials (objective = 3-fold group CV Top-1) and tuned vs untuned LightGBM.</figcaption></figure><h2>5. HMM and Viterbi Route Reconstruction</h2><ol>
 <li><b>Hidden states.</b> At fix i, the states are its candidate arcs, each stored as (fix, arc id, projection fraction along the arc).
@@ -213,7 +228,9 @@ gap_s = 30.0 s, the transition matrix is set to zero (uniform), so the chain res
 <table><thead><tr><th>trip_id</th><th>n_fixes</th><th>clf_top1</th><th>hmm_top1</th><th>clf_continuity</th><th>hmm_continuity</th><th>clf_breaks</th><th>hmm_breaks</th><th>clf_route_f1</th><th>hmm_route_f1</th></tr></thead><tbody><tr><td>00000000</td><td>2503</td><td>0.9505</td><td>0.9600</td><td>0.9912</td><td>0.9992</td><td>22</td><td>2</td><td>0.9810</td><td>0.9945</td></tr><tr><td>00000007</td><td>1354</td><td>0.9446</td><td>0.9490</td><td>0.9993</td><td>1.0000</td><td>1</td><td>0</td><td>0.9872</td><td>0.9872</td></tr><tr><td>00000009</td><td>1049</td><td>0.8837</td><td>0.9161</td><td>0.9876</td><td>0.9981</td><td>13</td><td>2</td><td>0.9134</td><td>0.9433</td></tr><tr><td>00000040</td><td>2995</td><td>0.9386</td><td>0.9432</td><td>0.9943</td><td>1.0000</td><td>17</td><td>0</td><td>0.9752</td><td>0.9966</td></tr><tr><td>00000052</td><td>262</td><td>0.9695</td><td>1.0000</td><td>0.9808</td><td>1.0000</td><td>5</td><td>0</td><td>0.9524</td><td>0.9905</td></tr><tr><td>00000056</td><td>3958</td><td>0.9214</td><td>0.9669</td><td>0.9664</td><td>0.9990</td><td>133</td><td>4</td><td>0.9312</td><td>0.9721</td></tr><tr><td>00000065</td><td>768</td><td>0.8841</td><td>0.9023</td><td>0.9857</td><td>0.9974</td><td>11</td><td>2</td><td>0.9243</td><td>0.9386</td></tr><tr><td>00000076</td><td>1486</td><td>0.9179</td><td>0.9670</td><td>0.9805</td><td>0.9993</td><td>29</td><td>1</td><td>0.9303</td><td>0.9736</td></tr><tr><td>00000077</td><td>3911</td><td>0.7870</td><td>0.8668</td><td>0.9880</td><td>0.9997</td><td>47</td><td>1</td><td>0.8721</td><td>0.9678</td></tr><tr><td>00000091</td><td>874</td><td>0.8879</td><td>0.9371</td><td>0.9851</td><td>1.0000</td><td>13</td><td>0</td><td>0.9514</td><td>0.9729</td></tr></tbody></table>
 <figure><img src="../results/figures/hmm_per_trip.png" style="width:100%"><figcaption>Fig 5.1: Classifier-only vs classifier+HMM per student-test trip.</figcaption></figure>
 <figure><img src="../results/figures/hmm_grid.png" style="width:60%"><figcaption>Fig 5.2: Decoder grid search on out-of-fold training scores.</figcaption></figure>
-<p><b>Did HMM decoding improve the route?</b> Yes. Pooled Top-1 rose from 89.74% to 93.43%, and it improved on 10 of 10 trips. The largest gain is in continuity: isolated wrong snaps to a crossing street or the opposite carriageway cannot be reached from their neighbours at a plausible distance, so Viterbi replaces them. Route F1 and the order-aware LCS ratio rise as well.</p><p><b>Where it did not help:</b> the remaining errors are mostly long runs on a parallel road, where the classifier and the HMM agree on the wrong but connected alternative, and fixes right at junctions where the label itself is ambiguous.</p><h2>6. Geographical Visualisation Using Folium</h2><p>Maps are generated with Folium by <code>src/pathsnap/viz.py</code>. Each map has the following layers, each of which can be toggled:</p>
+<p><b>Did HMM decoding improve the route?</b> Yes. Pooled Top-1 rose from 89.74% to 93.43%, and it improved on 10 of 10 trips. The largest gain is in continuity: breaks per trip fell from 29.1 to 1.2, and route F1 rose from 0.9419 to 0.9737. This is what the transition model is designed to do: it penalises consecutive arcs that are not reachable from each other at a plausible distance.</p><p><b>Where it did not help:</b> 1257 reliable student-test fixes are still wrong after decoding. We split them by their relation to the reference arc: reference arc not in candidate set 53 (4%), opposite direction of reference arc 630 (50%), adjacent arc (shares a node with reference) 473 (38%), other arc 101 (8%). The 'reference not in candidates' errors cannot be fixed by any classifier or decoder, only by candidate generation. 'Opposite direction' errors pick the twin arc on the same geometry, which the heading features target. 'Adjacent arc' errors are off by one arc at a junction, where the label itself depends on our alignment.</p>
+<table><thead><tr><th>category</th><th>n</th></tr></thead><tbody><tr><td>reference arc not in candidate set</td><td>53</td></tr><tr><td>opposite direction of reference arc</td><td>630</td></tr><tr><td>adjacent arc (shares a node with reference)</td><td>473</td></tr><tr><td>other arc</td><td>101</td></tr></tbody></table>
+<p class="note">Remaining HMM errors on reliable student-test fixes, by relation of the predicted arc to the reference arc. Computed by report/build_report.py:error_breakdown.</p><h2>6. Geographical Visualisation Using Folium</h2><p>Maps are generated with Folium by <code>src/pathsnap/viz.py</code>. Each map has the following layers, each of which can be toggled:</p>
 <ul>
 <li>Raw GPS fixes (blue dots).</li>
 <li>Road-network arcs within 150 m of the trajectory (grey).</li>
@@ -223,8 +240,8 @@ gap_s = 30.0 s, the transition matrix is set to zero (uniform), so the chain res
 <li>Start and end markers, a scale bar and a legend.</li>
 </ul>
 <p>The view is fitted to the trajectory's bounding box. Each map is saved as interactive HTML. The screenshots below come from those files.</p>
-<figure><img src="../report/img/student_trip_00000052.png" style="width:100%"><figcaption>Fig 6.1: Student-test trip 00000052: GPS (blue dots), road network (grey), reference (thick green), classifier-only (orange, dashed), HMM+Viterbi (red). Layer control top right. HTML: results/maps/student_trip_00000052.html</figcaption></figure>
-<figure><img src="../report/img/student_trip_00000077.png" style="width:100%"><figcaption>Fig 6.2: Student-test trip 00000077, the hardest trip for the final pipeline. HTML: results/maps/student_trip_00000077.html</figcaption></figure>
+<figure><img src="../report/img/student_trip_00000052.png" style="width:100%"><figcaption>Fig 6.1: Student-test trip 00000052: GPS (blue dots), road network (grey), reference (thick green), classifier-only (orange, dashed), HMM+Viterbi (red). Layer control top right. HTML: results/maps/student_trip_00000052.html. The basemap is missing because map tiles could not be downloaded on the machine that rendered this screenshot.</figcaption></figure>
+<figure><img src="../report/img/student_trip_00000077.png" style="width:100%"><figcaption>Fig 6.2: Student-test trip 00000077, the hardest trip for the final pipeline. HTML: results/maps/student_trip_00000077.html. The basemap is missing because map tiles could not be downloaded on the machine that rendered this screenshot.</figcaption></figure>
 <p class="note">Interactive maps for all 10 student-test trips and the EDA trips are in results/maps/. They are generated by scripts/05_hmm.py and scripts/01_eda.py using src/pathsnap/viz.py.</p><h2>7. API, UI and Deployment</h2><ul>
 <li><b>Laptop 1 (API).</b> <code>uvicorn api.main:app --host 0.0.0.0 --port 8000</code> loads the final model, the feature configuration and the HMM
 parameters (artifacts/pipeline_config.json, artifacts/hmm_config.json). <code>GET /trips</code> lists the evaluation trips found in
@@ -236,30 +253,12 @@ reference route. Every request is logged with timings and accuracy to the consol
 The evaluator enters the API address, loads the ten trips, selects one, and sees the predicted route over the GPS fixes with Top-1
 accuracy, classifier-only accuracy, continuity, breaks, route F1 and processing time.</li>
 <li>No outputs are hard-coded. The UI holds no data and calls the API for every selection.</li></ul>
-<figure><img src="../report/img/ui.png" style="width:100%"><figcaption>Fig 7.1: Evaluator UI (Laptop 2) after selecting a trip. During this rehearsal the API served the student-test trips.</figcaption></figure>
-<h4>API console output (Laptop 1)</h4><pre class="term"> 2026-11-18 07:10:55,455 | INFO | Loaded model models/final_LightGBM_tuned.joblib | HMM params {&#x27;beta&#x27;: 3.0, &#x27;w_emission&#x27;: 2.0, &#x27;gap_s&#x27;: 30.0, &#x27;unreachable_logp&#x27;: -50.0, &#x27;p_floor&#x27;: 0.0001} | trips dir data/raw/student_test
- INFO:     Started server process [5619]
- INFO:     Waiting for application startup.
- INFO:     Application startup complete.
- INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
- 2026-11-18 07:11:02,147 | INFO | GET /trips -&gt; 10 trips
- INFO:     127.0.0.1:46848 - &quot;GET /trips HTTP/1.1&quot; 200 OK
- 2026-11-18 07:11:02,157 | INFO | POST /predict trip=00000000 : running full pipeline
- 2026-11-18 07:11:03,133 | INFO | trip=00000000 fixes=2503 candidates=10530 time=0.85s {&#x27;preprocess_candidates_s&#x27;: 0.26, &#x27;classifier_s&#x27;: 0.34, &#x27;hmm_viterbi_s&#x27;: 0.19} | HMM top-1=0.9600 classifier top-1=0.9505
- INFO:     127.0.0.1:46856 - &quot;POST /predict HTTP/1.1&quot; 200 OK
- 2026-11-18 07:11:03,161 | INFO | POST /predict trip=00000077 : running full pipeline
- 2026-11-18 07:11:05,083 | INFO | trip=00000077 fixes=3911 candidates=28443 time=1.74s {&#x27;preprocess_candidates_s&#x27;: 0.26, &#x27;classifier_s&#x27;: 1.0, &#x27;hmm_viterbi_s&#x27;: 0.44} | HMM top-1=0.8668 classifier top-1=0.7870
- INFO:     127.0.0.1:46864 - &quot;POST /predict HTTP/1.1&quot; 200 OK
- 2026-11-18 07:11:05,140 | INFO | POST /predict trip=00000091 : running full pipeline
- 2026-11-18 07:11:05,840 | INFO | trip=00000091 fixes=874 candidates=6427 time=0.62s {&#x27;preprocess_candidates_s&#x27;: 0.13, &#x27;classifier_s&#x27;: 0.2, &#x27;hmm_viterbi_s&#x27;: 0.26} | HMM top-1=0.9371 classifier top-1=0.8879
- INFO:     127.0.0.1:46878 - &quot;POST /predict HTTP/1.1&quot; 200 OK
-</pre>
-<p class="note">Rehearsal log from <code>uvicorn api.main:app</code>. <b>Replace with the screenshot of the receiving laptop's terminal taken during the evaluation.</b></p><h2>8. Conclusions</h2><ul>
-<li>Framing map-matching as candidate ranking lets standard classifiers be compared fairly. Temporal-context and heading features are what
-lift the classifiers above the nearest-arc rule (54.81% → 89.74% Top-1).</li>
+<h2>8. Conclusions</h2><ul>
+<li>Framing map-matching as candidate ranking lets standard classifiers be compared fairly. The learned classifier lifts Top-1 well above
+the nearest-arc rule (54.81% → 89.74%). Fig 3.6 shows which features the final model relies on most.</li>
 <li>LightGBM gave the best cross-validated accuracy and well-calibrated probabilities, and Bayesian optimisation tuned it further.</li>
 <li>HMM/Viterbi decoding adds network connectivity, raising Top-1 to 93.43% and producing far more continuous routes.</li>
-<li><b>Limitations:</b> the per-fix labels come from our own alignment of the reference route, which itself may be imperfect. About 11% of
+<li><b>Limitations:</b> the per-fix labels come from our own alignment of the reference route, which itself may be imperfect. 11.2% of
 training fixes could not be labelled reliably. The 50 m reliability threshold is a judgement call. Accuracy over all labelled fixes is reported alongside.</li>
 <li><b>Future work:</b> learn the transition model, try sequence models such as a CRF, and use speed-dependent β.</li></ul><h2>9. AI-assistance disclosure</h2><p>We used an AI assistant to help write code and to draft parts of this report. All experiments were executed on the
 provided data with the code in our repository. Every number, table, plot and map is produced by those scripts and can be regenerated with
