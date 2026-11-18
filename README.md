@@ -90,6 +90,8 @@ Open `http://localhost:8080`, enter `http://<laptop-1-ip>:8000` as the API URL a
 
 The reference routes never leave Laptop 1. The API reads them only after prediction, to compute accuracy, and returns only the metrics.
 
+To check the API before a demo, run `python scripts/smoke_test_api.py http://<laptop-1-ip>:8000`.
+
 ### API
 
 | Method | Path | Body | Returns |
