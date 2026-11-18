@@ -7,5 +7,3 @@ logs/
 data/raw/
 results/preds/
 report/api_console_raw.txt
-models/RandomForest.joblib
-models/ExtraTrees.joblib

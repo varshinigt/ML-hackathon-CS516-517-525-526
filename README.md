@@ -20,7 +20,7 @@ UE24CS352A Machine Learning hackathon. Team: CS516, CS517, CS525, CS526.
 | `scripts/` | Numbered experiment scripts, run in order (see below) |
 | `api/` | FastAPI backend, run on Laptop 1 |
 | `ui/` | Evaluator web UI (static HTML and Leaflet), run on Laptop 2 |
-| `models/` | Saved models: every compared model, the tuned model and the final model |
+| `models/` | Saved models: all 10 compared models (RandomForest and ExtraTrees are xz-compressed) and the final tuned model `final_LightGBM_tuned.joblib` |
 | `artifacts/` | `pipeline_config.json` (which model the API loads) and `hmm_config.json` (decoder parameters) |
 | `results/` | CSV results, experiment logs and JSON configs, figures (`figures/`), Folium maps (`maps/`), EDA tables (`eda/`) |
 | `report/` | Technical report (`report.pdf`), its HTML source and the generator script |
@@ -58,6 +58,8 @@ python scripts/05_hmm.py --model LightGBM      # decoder tuning (train OOF) + cl
 python scripts/06_export.py LightGBM           # write artifacts/pipeline_config.json for the API
 python report/build_report.py                  # regenerate report/report.html and report/report.pdf
 ```
+
+The report embeds the two deployment screenshots from `report/screenshots/` (Laptop 1 API console, Laptop 2 UI). Take them on the real two-laptop setup. `report/screenshots/README.md` lists what each one must show.
 
 The evaluator partition is never read by scripts 01–06. It is used only by the API at evaluation time.
 
