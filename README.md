@@ -53,6 +53,7 @@ Run the scripts from the repository root, in this order:
 python scripts/01_eda.py                       # dataset inventory, EDA plots, Folium maps
 python scripts/02_build_features.py            # cleaning, label alignment, candidates and features (train + student_test)
 python scripts/03_train_compare.py             # 10 models: 5-fold group CV + student-test evaluation
+python scripts/03b_route_metrics.py  # route-level metrics
 python scripts/04_bayes_opt.py --trials 30     # Optuna TPE on the model with the best CV Top-1
 python scripts/05_hmm.py --model LightGBM      # decoder tuning (train OOF) + classifier vs HMM on student_test
 python scripts/06_export.py LightGBM           # write artifacts/pipeline_config.json for the API
