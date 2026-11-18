@@ -65,7 +65,7 @@ def score_block(cands, pts, proba) -> dict:
     return m
 
 
-@lru_cache(maxsize=16)
+@lru_cache(maxsize=3)
 def trip_and_net(trip_id: str):
     files = discover_trips()[trip_id]
     trip = load_trip(trip_id, files)

@@ -1,0 +1,84 @@
+precomputed transitions for 80 training trips in 77s
+{'beta': 3, 'w_emission': 0.5, 'gap_s': 10} 0.9179
+{'beta': 3, 'w_emission': 0.5, 'gap_s': 30} 0.9184
+{'beta': 3, 'w_emission': 0.5, 'gap_s': 120} 0.9184
+{'beta': 3, 'w_emission': 1, 'gap_s': 10} 0.9187
+{'beta': 3, 'w_emission': 1, 'gap_s': 30} 0.9190
+{'beta': 3, 'w_emission': 1, 'gap_s': 120} 0.9191
+{'beta': 3, 'w_emission': 2, 'gap_s': 10} 0.9191
+{'beta': 3, 'w_emission': 2, 'gap_s': 30} 0.9193
+{'beta': 3, 'w_emission': 2, 'gap_s': 120} 0.9192
+{'beta': 3, 'w_emission': 4, 'gap_s': 10} 0.9155
+{'beta': 3, 'w_emission': 4, 'gap_s': 30} 0.9159
+{'beta': 3, 'w_emission': 4, 'gap_s': 120} 0.9162
+{'beta': 7, 'w_emission': 0.5, 'gap_s': 10} 0.9187
+{'beta': 7, 'w_emission': 0.5, 'gap_s': 30} 0.9190
+{'beta': 7, 'w_emission': 0.5, 'gap_s': 120} 0.9191
+{'beta': 7, 'w_emission': 1, 'gap_s': 10} 0.9190
+{'beta': 7, 'w_emission': 1, 'gap_s': 30} 0.9189
+{'beta': 7, 'w_emission': 1, 'gap_s': 120} 0.9189
+{'beta': 7, 'w_emission': 2, 'gap_s': 10} 0.9147
+{'beta': 7, 'w_emission': 2, 'gap_s': 30} 0.9148
+{'beta': 7, 'w_emission': 2, 'gap_s': 120} 0.9152
+{'beta': 7, 'w_emission': 4, 'gap_s': 10} 0.9113
+{'beta': 7, 'w_emission': 4, 'gap_s': 30} 0.9116
+{'beta': 7, 'w_emission': 4, 'gap_s': 120} 0.9117
+{'beta': 15, 'w_emission': 0.5, 'gap_s': 10} 0.9178
+{'beta': 15, 'w_emission': 0.5, 'gap_s': 30} 0.9176
+{'beta': 15, 'w_emission': 0.5, 'gap_s': 120} 0.9176
+{'beta': 15, 'w_emission': 1, 'gap_s': 10} 0.9137
+{'beta': 15, 'w_emission': 1, 'gap_s': 30} 0.9135
+{'beta': 15, 'w_emission': 1, 'gap_s': 120} 0.9138
+{'beta': 15, 'w_emission': 2, 'gap_s': 10} 0.9110
+{'beta': 15, 'w_emission': 2, 'gap_s': 30} 0.9109
+{'beta': 15, 'w_emission': 2, 'gap_s': 120} 0.9111
+{'beta': 15, 'w_emission': 4, 'gap_s': 10} 0.9073
+{'beta': 15, 'w_emission': 4, 'gap_s': 30} 0.9075
+{'beta': 15, 'w_emission': 4, 'gap_s': 120} 0.9077
+{'beta': 30, 'w_emission': 0.5, 'gap_s': 10} 0.9134
+{'beta': 30, 'w_emission': 0.5, 'gap_s': 30} 0.9132
+{'beta': 30, 'w_emission': 0.5, 'gap_s': 120} 0.9135
+{'beta': 30, 'w_emission': 1, 'gap_s': 10} 0.9109
+{'beta': 30, 'w_emission': 1, 'gap_s': 30} 0.9106
+{'beta': 30, 'w_emission': 1, 'gap_s': 120} 0.9108
+{'beta': 30, 'w_emission': 2, 'gap_s': 10} 0.9071
+{'beta': 30, 'w_emission': 2, 'gap_s': 30} 0.9070
+{'beta': 30, 'w_emission': 2, 'gap_s': 120} 0.9072
+{'beta': 30, 'w_emission': 4, 'gap_s': 10} 0.9045
+{'beta': 30, 'w_emission': 4, 'gap_s': 30} 0.9047
+{'beta': 30, 'w_emission': 4, 'gap_s': 120} 0.9048
+{'beta': 60, 'w_emission': 0.5, 'gap_s': 10} 0.9108
+{'beta': 60, 'w_emission': 0.5, 'gap_s': 30} 0.9103
+{'beta': 60, 'w_emission': 0.5, 'gap_s': 120} 0.9108
+{'beta': 60, 'w_emission': 1, 'gap_s': 10} 0.9070
+{'beta': 60, 'w_emission': 1, 'gap_s': 30} 0.9068
+{'beta': 60, 'w_emission': 1, 'gap_s': 120} 0.9070
+{'beta': 60, 'w_emission': 2, 'gap_s': 10} 0.9046
+{'beta': 60, 'w_emission': 2, 'gap_s': 30} 0.9044
+{'beta': 60, 'w_emission': 2, 'gap_s': 120} 0.9045
+{'beta': 60, 'w_emission': 4, 'gap_s': 10} 0.9014
+{'beta': 60, 'w_emission': 4, 'gap_s': 30} 0.9016
+{'beta': 60, 'w_emission': 4, 'gap_s': 120} 0.9017
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+/usr/local/lib/python3.13/site-packages/folium/raster_layers.py:129: UserWarning: CartoDB tiles now require an API key. Please provide one to continue using the tiles. You can request the key at https://carto.com/basemaps/apikey/.
+  tiles = tiles.build_url(fill_subdomain=False, scale_factor="{r}")  # type: ignore
+                      method  top1_acc  mean_trip_top1  route_continuity  breaks_per_trip  route_f1  lcs_ratio
+0  Classifier only (arg-max)  0.897350        0.908509          0.985884             29.1  0.941850   0.890128
+1   Classifier + HMM/Viterbi  0.934302        0.940859          0.999274              1.2  0.973715   0.902583

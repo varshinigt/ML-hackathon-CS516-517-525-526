@@ -12,7 +12,6 @@ import itertools
 import json
 import sys
 import time
-from multiprocessing import get_context
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -90,8 +89,9 @@ def main(name, workers):
     tr_c["score"] = oof
     train_trips = split_trips(tr_c, tr_p)
     t0 = time.time()
-    with get_context("spawn").Pool(workers) as pool:  # spawn: forking after LightGBM's OpenMP threads deadlocks
-        tr_steps = dict(pool.map(per_trip, train_trips, chunksize=1))
+    # Sequential on purpose: a worker pool held several 300k-arc networks per process and was
+    # OOM-killed, which leaves multiprocessing.Pool.map waiting forever.
+    tr_steps = dict(per_trip(t) for t in train_trips)
     print(f"precomputed transitions for {len(tr_steps)} training trips in {time.time() - t0:.0f}s", flush=True)
 
     grid_rows = []
@@ -115,8 +115,7 @@ def main(name, workers):
     st_c["score"], _ = predict(model, st_c)
     joblib.dump(model, ROOT / "models" / f"final_{name}_{variant}.joblib", compress=3)
     st_trips = split_trips(st_c, st_p)
-    with get_context("spawn").Pool(workers) as pool:  # spawn: forking after LightGBM's OpenMP threads deadlocks
-        st_steps = dict(pool.map(per_trip, st_trips, chunksize=1))
+    st_steps = dict(per_trip(t) for t in st_trips)
     rows = evaluate(st_trips, st_steps, best)
     per = []
     for r, (tid, cc, pp) in zip(rows, st_trips):

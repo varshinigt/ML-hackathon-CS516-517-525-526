@@ -1,10 +1,32 @@
 {
   "params": {
-    "beta": 15.0,
-    "w_emission": 1.0,
+    "beta": 3.0,
+    "w_emission": 2.0,
     "gap_s": 30.0,
     "unreachable_logp": -50.0,
     "p_floor": 0.0001
   },
-  "selected_on": "defaults (Newson & Krumm style); replaced by scripts/05_hmm.py grid search"
+  "selected_on": "out-of-fold scores, 80 training trips",
+  "grid": {
+    "beta": [
+      3,
+      7,
+      15,
+      30,
+      60
+    ],
+    "w_emission": [
+      0.5,
+      1,
+      2,
+      4
+    ],
+    "gap_s": [
+      10,
+      30,
+      120
+    ]
+  },
+  "train_oof_classifier_top1": 0.8830972370795379,
+  "train_oof_hmm_top1": 0.9193490874906804
 }

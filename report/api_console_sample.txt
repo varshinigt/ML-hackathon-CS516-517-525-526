@@ -1,0 +1,16 @@
+ 2026-11-18 07:10:55,455 | INFO | Loaded model models/final_LightGBM_tuned.joblib | HMM params {'beta': 3.0, 'w_emission': 2.0, 'gap_s': 30.0, 'unreachable_logp': -50.0, 'p_floor': 0.0001} | trips dir data/raw/student_test
+ INFO:     Started server process [5619]
+ INFO:     Waiting for application startup.
+ INFO:     Application startup complete.
+ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+ 2026-11-18 07:11:02,147 | INFO | GET /trips -> 10 trips
+ INFO:     127.0.0.1:46848 - "GET /trips HTTP/1.1" 200 OK
+ 2026-11-18 07:11:02,157 | INFO | POST /predict trip=00000000 : running full pipeline
+ 2026-11-18 07:11:03,133 | INFO | trip=00000000 fixes=2503 candidates=10530 time=0.85s {'preprocess_candidates_s': 0.26, 'classifier_s': 0.34, 'hmm_viterbi_s': 0.19} | HMM top-1=0.9600 classifier top-1=0.9505
+ INFO:     127.0.0.1:46856 - "POST /predict HTTP/1.1" 200 OK
+ 2026-11-18 07:11:03,161 | INFO | POST /predict trip=00000077 : running full pipeline
+ 2026-11-18 07:11:05,083 | INFO | trip=00000077 fixes=3911 candidates=28443 time=1.74s {'preprocess_candidates_s': 0.26, 'classifier_s': 1.0, 'hmm_viterbi_s': 0.44} | HMM top-1=0.8668 classifier top-1=0.7870
+ INFO:     127.0.0.1:46864 - "POST /predict HTTP/1.1" 200 OK
+ 2026-11-18 07:11:05,140 | INFO | POST /predict trip=00000091 : running full pipeline
+ 2026-11-18 07:11:05,840 | INFO | trip=00000091 fixes=874 candidates=6427 time=0.62s {'preprocess_candidates_s': 0.13, 'classifier_s': 0.2, 'hmm_viterbi_s': 0.26} | HMM top-1=0.9371 classifier top-1=0.8879
+ INFO:     127.0.0.1:46878 - "POST /predict HTTP/1.1" 200 OK

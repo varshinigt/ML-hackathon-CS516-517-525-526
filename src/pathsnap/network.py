@@ -79,7 +79,7 @@ class RoadNetwork:
             d = dijkstra(self.graph, directed=True, indices=int(src), limit=limit)
             idx = np.flatnonzero(np.isfinite(d))
             hit = dict(zip(idx.tolist(), d[idx].tolist()))
-            if len(self._sp_cache) > 20000:
+            if len(self._sp_cache) > 3000:  # bound memory: each entry holds every node within the search limit
                 self._sp_cache.clear()
             self._sp_cache[key] = hit
         return hit
