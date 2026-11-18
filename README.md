@@ -118,6 +118,4 @@ To check the API before a demo, run `python scripts/smoke_test_api.py http://<la
 
 Source: `results/hmm_comparison.csv`.
 
-## AI-assistance disclosure
 
-Parts of this code and the report draft were written with an AI assistant. Every number, plot and map comes from running the code in this repository on the provided data. The team has reviewed the work and is responsible for explaining it.
