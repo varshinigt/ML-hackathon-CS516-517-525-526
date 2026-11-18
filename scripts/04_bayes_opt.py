@@ -14,7 +14,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-import joblib  # noqa: E402
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
@@ -129,7 +128,7 @@ def main(model_name, n_trials):
                      "st_route_continuity": rs["route_continuity"], "train_time_s": t_fit,
                      "inference_time_s": t_inf, "inference_us_per_candidate": 1e6 * t_inf / len(st_c)})
         if tag == "tuned":
-            joblib.dump(m, ROOT / "models" / f"{model_name}_tuned.joblib", compress=3)
+            # the deployed copy is saved by scripts/05_hmm.py as models/final_<model>_tuned.joblib
             out = st_c[["trip_id", "pt", "arc", "frac", "label", "reliable"]].copy()
             out["score"] = p
             out.to_pickle(RES / "preds" / f"student_{model_name}_tuned.pkl")
